@@ -1,10 +1,7 @@
+pub mod model;
+pub mod serial;
 
-#[derive(Debug, PartialEq, Eq, Clone, serde::Deserialize, serde::Serialize)]
-pub struct Test {
-    #[serde(default = "default_test_a")]
-    pub a: i64,
-    pub b: String,
+pub mod prelude {
+    pub use crate::model::Test;
+    pub use crate::serial::{from_avro, to_avro};
 }
-
-#[inline(always)]
-fn default_test_a() -> i64 { 42 }
