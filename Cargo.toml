@@ -1,2 +1,2 @@
 [workspace]
-members = ["contracts", "api"]
+members = ["contracts", "api", "event_bus"]
