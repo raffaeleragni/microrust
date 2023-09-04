@@ -1,7 +1,9 @@
-pub mod model;
+pub mod api;
+pub mod avro;
 pub mod serial;
 
 pub mod prelude {
-    pub use crate::model::Test;
-    pub use crate::serial::{from_avro, to_avro};
+    pub use crate::api::*;
+    pub use crate::avro::*;
+    pub use crate::serial::*;
 }

@@ -8,7 +8,7 @@ fn main() {
     file.read_to_string(&mut raw_schema).unwrap();
 
     let source = Source::SchemaStr(&raw_schema);
-    let mut file = File::create("src/model.rs").unwrap();
+    let mut file = File::create("src/avro.rs").unwrap();
 
     let g = Generator::new().unwrap();
     g.gen(&source, &mut file).unwrap();
