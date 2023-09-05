@@ -12,10 +12,10 @@ async fn main() {
         },
     ));
 
-    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
+    let (metric_gatherer, metric_printer) = PrometheusMetricLayer::pair();
     let app = Router::new()
-        .route("/metrics", get(|| async move { metric_handle.render() }))
-        .layer(prometheus_layer);
+        .route("/metrics", get(|| async move { metric_printer.render() }))
+        .layer(metric_gatherer);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     axum::Server::bind(&addr)
