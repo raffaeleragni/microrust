@@ -1,8 +1,14 @@
 {
     "type": "record",
-    "name": "test",
+    "name": "product",
     "fields": [
-        {"name": "a", "type": "long", "default": 42},
-        {"name": "b", "type": "string"}
+        {
+            "name": "id",
+            "type": "long"
+        },
+        {
+            "name": "items",
+            "type": "string"
+        }
     ]
 }

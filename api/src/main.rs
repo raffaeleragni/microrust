@@ -1,6 +1,12 @@
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use axum_prometheus::PrometheusMetricLayer;
+use products::{get_producs, new_product};
 use std::net::SocketAddr;
+
+mod products;
 
 #[tokio::main]
 async fn main() {
@@ -14,6 +20,7 @@ async fn main() {
 
     let (metric_gatherer, metric_printer) = PrometheusMetricLayer::pair();
     let app = Router::new()
+        .route("/products", get(get_producs).post(new_product))
         .route("/metrics", get(|| async move { metric_printer.render() }))
         .layer(metric_gatherer);
 
