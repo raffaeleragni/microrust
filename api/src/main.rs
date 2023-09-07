@@ -1,7 +1,4 @@
-use axum::{
-    routing::{get, post},
-    Router,
-};
+use axum::{routing::get, Router};
 use axum_prometheus::PrometheusMetricLayer;
 use products::{get_producs, new_product};
 use std::net::SocketAddr;
