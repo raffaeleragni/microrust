@@ -1,13 +1,15 @@
 version: '3.9'
 services:
   mysql:
+    ports: [ "3306:3306" ]
     image: 'mysql'
     environment:
       - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=root
+      - MYSQL_DATABASE=api
   zookeeper:
     image: 'zookeeper'
   kafka:
+    ports: [ "9092:9092", "9094:9094" ]
     depends_on: [ 'zookeeper' ]
     image: 'confluentinc/cp-kafka'
     environment:
