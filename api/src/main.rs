@@ -2,6 +2,7 @@ use axum::{routing::get, Router};
 use axum_prometheus::PrometheusMetricLayer;
 use products::{get_producs, new_product};
 use std::net::SocketAddr;
+use structured_logger::async_json::new_writer;
 
 mod products;
 
@@ -14,6 +15,11 @@ async fn main() {
             ..Default::default()
         },
     ));
+
+    structured_logger::Builder::with_level("info")
+        .with_target_writer("*", new_writer(tokio::io::stdout()))
+        .init();
+    log::info!(target: "api", stage = "startup"; "Initialized");
 
     let (metric_gatherer, metric_printer) = PrometheusMetricLayer::pair();
     let app = Router::new()
