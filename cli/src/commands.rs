@@ -1,3 +1,3 @@
-pub fn new_tenant(env: super::cli::Env, id: u64, name: String) {
+pub fn new_tenant(_: super::cli::Env, _: u64, _: String) {
     todo!()
 }

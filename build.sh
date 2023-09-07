@@ -6,7 +6,9 @@ if [ -z "`which rustc`" ]; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 fi
 
-rustup target add wasm32-unknown-unknown
+if [ -z "`rustup target list | grep wasm32-unknown-unknown`" ]; then
+  rustup target add wasm32-unknown-unknown
+fi
 
 docker compose down
 docker compose up -d
