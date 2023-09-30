@@ -4,13 +4,14 @@ mod products;
 use axum::{routing::get, Router};
 use axum_prometheus::PrometheusMetricLayer;
 use products::{get_producs, new_product};
-use std::net::SocketAddr;
+use std::{env, net::SocketAddr};
 use structured_logger::async_json::new_writer;
 
 #[tokio::main]
 async fn main() {
+    let _ = dotenv::dotenv();
     let _guard = sentry::init((
-        "https://examplePublicKey@o0.ingest.sentry.io/0",
+        env::var("SENTRY_URL").unwrap(),
         sentry::ClientOptions {
             release: sentry::release_name!(),
             ..Default::default()
