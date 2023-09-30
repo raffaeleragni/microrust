@@ -4,6 +4,7 @@ use axum::{
 };
 use contracts::prelude::*;
 
+#[tracing::instrument]
 pub async fn get_producs() -> Response {
     let response = Vec::<Product>::new();
     Json(response).into_response()

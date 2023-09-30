@@ -4,6 +4,7 @@ mod products;
 use axum::{routing::get, Router};
 use axum_prometheus::PrometheusMetricLayer;
 use products::{get_producs, new_product};
+use sentry_tower::{NewSentryLayer, SentryHttpLayer};
 use std::{env, net::SocketAddr};
 use structured_logger::async_json::new_writer;
 
@@ -14,6 +15,7 @@ async fn main() {
         env::var("SENTRY_URL").unwrap(),
         sentry::ClientOptions {
             release: sentry::release_name!(),
+            traces_sample_rate: 1.0,
             ..Default::default()
         },
     ));
@@ -25,7 +27,9 @@ async fn main() {
     let app = Router::new()
         .route("/products", get(get_producs).post(new_product))
         .route("/metrics", get(|| async move { metric_printer.render() }))
-        .layer(metric_gatherer);
+        .layer(metric_gatherer)
+        .layer(SentryHttpLayer::with_transaction())
+        .layer(NewSentryLayer::new_from_top());
 
     log::info!(target: "api", stage = "startup"; "Initialized");
 
