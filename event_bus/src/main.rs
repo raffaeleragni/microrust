@@ -7,7 +7,7 @@ fn main() {
         let mut consumer = Consumer::from_hosts(devs.to_owned())
             .with_topic(topic.to_owned())
             .with_fallback_offset(FetchOffset::Earliest)
-            .with_offset_storage(GroupOffsetStorage::Kafka)
+            .with_offset_storage(Some(GroupOffsetStorage::Kafka))
             .create()
             .unwrap();
         while let Ok(it) = consumer.poll() {
