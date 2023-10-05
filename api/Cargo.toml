@@ -17,7 +17,7 @@ serde_json = "1.0.105"
 axum-macros = "0.3.8"
 structured-logger = "1.0.3"
 log = { version = "0.4.20", features = ["kv_unstable_serde"] }
-mysql = "23.0.0"
+mysql = "24.0.0"
 dotenv = "0.15.0"
 tracing = "0.1.37"
 kafka = "0.10.0"
