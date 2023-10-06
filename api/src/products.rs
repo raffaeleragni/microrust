@@ -14,8 +14,7 @@ pub async fn get_producs() -> Response {
 
 #[axum_macros::debug_handler]
 pub async fn new_product(State(pool): State<MySqlPool>, Json(product): Json<CreateProduct>) {
-    let id = sqlx::query("insert into product (items) ($2)")
-        .bind(&product.items)
+    let id = sqlx::query!("insert into product (items) values (?)", &product.items)
         .execute(&pool)
         .await
         .unwrap()
