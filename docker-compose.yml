@@ -6,6 +6,10 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=api
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 1s
+      retries: 60
   zookeeper:
     image: 'zookeeper'
   kafka:
@@ -34,3 +38,17 @@ services:
 
       echo 'kafka topics created'
       "
+  migrate:
+    restart: on-failure
+    depends_on:
+      mysql:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM rust
+        RUN cargo install sqlx-cli
+        WORKDIR /
+    volumes:
+      - ./api/migrations:/migrations
+    command: sqlx migrate run --database-url mysql://root:root@mysql/api
