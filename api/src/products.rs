@@ -3,8 +3,11 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use axum_macros::debug_handler;
 use contracts::prelude::*;
-use sqlx::MySqlPool;
+use kafka::producer::Record;
+
+use crate::AppState;
 
 #[tracing::instrument]
 pub async fn get_producs() -> Response {
@@ -12,15 +15,22 @@ pub async fn get_producs() -> Response {
     Json(response).into_response()
 }
 
-#[axum_macros::debug_handler]
-pub async fn new_product(State(pool): State<MySqlPool>, Json(product): Json<CreateProduct>) {
+#[debug_handler]
+pub async fn new_product(State(state): State<AppState>, Json(product): Json<CreateProduct>) {
     let id = sqlx::query!("insert into product (items) values (?)", &product.items)
-        .execute(&pool)
+        .execute(&state.database)
         .await
         .unwrap()
         .last_insert_id();
-    let _item = Product {
+    let msg = bincode::serialize(&Product {
         id: id as i64,
         items: product.items,
-    };
+    })
+    .unwrap();
+    state
+        .producer
+        .lock()
+        .unwrap()
+        .send(&Record::from_value("products", msg))
+        .unwrap();
 }
