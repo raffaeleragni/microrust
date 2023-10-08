@@ -2,7 +2,7 @@ use kafka::consumer::{Consumer, FetchOffset, GroupOffsetStorage};
 
 fn main() {
     let devs: Vec<String> = vec!["localhost:9094".to_owned()];
-    let topics = vec!["events"];
+    let topics = vec!["products"];
     for topic in topics {
         let mut consumer = Consumer::from_hosts(devs.to_owned())
             .with_topic(topic.to_owned())
