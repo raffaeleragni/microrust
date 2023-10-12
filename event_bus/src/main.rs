@@ -1,7 +1,10 @@
+use std::env;
+
 use kafka::consumer::{Consumer, FetchOffset, GroupOffsetStorage};
 
 fn main() {
-    let devs: Vec<String> = vec!["localhost:9094".to_owned()];
+    let _ = dotenv::dotenv();
+    let devs: Vec<String> = vec![env::var("KAFKA_BOOTSTRAP").unwrap().to_owned()];
     let topics = vec!["products"];
     for topic in topics {
         let mut consumer = Consumer::from_hosts(devs.to_owned())
