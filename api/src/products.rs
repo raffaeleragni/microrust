@@ -1,23 +1,33 @@
 use std::error::Error;
 
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::{IntoResponse, Response},
-    Json,
-};
+use axum::{extract::State, http::StatusCode, Json};
 use axum_macros::debug_handler;
 use contracts::prelude::*;
 use kafka::producer::Record;
+use tracing::instrument;
 
 use crate::AppState;
 
-#[tracing::instrument]
-pub async fn get_producs() -> Response {
-    let response = Vec::<Product>::new();
-    Json(response).into_response()
+#[instrument(skip(state))]
+#[debug_handler]
+pub async fn get_products(State(state): State<AppState>) -> Result<Json<Vec<Product>>, StatusCode> {
+    match get_products_fn(state).await {
+        Ok(response) => Ok(Json(response)),
+        Err(err) => {
+            log::error!(target = "api", route = "get_products"; "{:?}", err);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }
 
+async fn get_products_fn(state: AppState) -> Result<Vec<Product>, Box<dyn Error>> {
+    let res = sqlx::query_as!(Product, "select * from product")
+        .fetch_all(&state.database)
+        .await?;
+    Ok(res)
+}
+
+#[instrument(skip(state))]
 #[debug_handler]
 pub async fn new_product(
     State(state): State<AppState>,
@@ -37,7 +47,7 @@ async fn new_product_fn(state: AppState, product: CreateProduct) -> Result<(), B
         .execute(&state.database)
         .await?
         .last_insert_id();
-    let msg = Product {
+    let msg = AvroProduct {
         id: id as i64,
         items: product.items,
     };

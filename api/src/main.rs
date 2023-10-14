@@ -3,7 +3,7 @@ mod products;
 use axum::{routing::get, Router};
 use axum_prometheus::PrometheusMetricLayer;
 use kafka::producer::Producer;
-use products::{get_producs, new_product};
+use products::new_product;
 use sentry_tower::{NewSentryLayer, SentryHttpLayer};
 use sqlx::{MySql, Pool};
 use std::{
@@ -12,6 +12,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 use structured_logger::async_json::new_writer;
+
+use crate::products::get_products;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -52,7 +54,7 @@ async fn axum_start(app: Router) {
 async fn axum_setup() -> Router {
     let (metric_gatherer, metric_printer) = PrometheusMetricLayer::pair();
     let app = Router::new()
-        .route("/products", get(get_producs).post(new_product))
+        .route("/products", get(get_products).post(new_product))
         .route("/metrics", get(|| async move { metric_printer.render() }))
         .with_state(AppState {
             database: db_pool().await,

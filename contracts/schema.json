@@ -1,6 +1,6 @@
 {
     "type": "record",
-    "name": "product",
+    "name": "avro_product",
     "fields": [
         {
             "name": "id",
