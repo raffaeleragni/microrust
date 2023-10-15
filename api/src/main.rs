@@ -1,6 +1,6 @@
 mod products;
 
-use axum::{routing::get, Router};
+use axum::{routing::{get, put}, Router};
 use axum_prometheus::PrometheusMetricLayer;
 use kafka::producer::Producer;
 use products::new_product;
@@ -13,7 +13,7 @@ use std::{
 };
 use structured_logger::async_json::new_writer;
 
-use crate::products::get_products;
+use crate::products::{get_products, replace_product, delete_product};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -55,6 +55,7 @@ async fn axum_setup() -> Router {
     let (metric_gatherer, metric_printer) = PrometheusMetricLayer::pair();
     let app = Router::new()
         .route("/products", get(get_products).post(new_product))
+        .route("/product/:id", put(replace_product).delete(delete_product))
         .route("/metrics", get(|| async move { metric_printer.render() }))
         .with_state(AppState {
             database: db_pool().await,

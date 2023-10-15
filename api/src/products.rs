@@ -1,12 +1,12 @@
 use std::error::Error;
 
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::{State, Query}, http::StatusCode, Json};
 use axum_macros::debug_handler;
 use contracts::prelude::*;
 use kafka::producer::Record;
 use tracing::instrument;
-
 use crate::AppState;
+use serde::Deserialize;
 
 #[instrument(skip(state))]
 #[debug_handler]
@@ -58,3 +58,54 @@ async fn new_product_fn(state: AppState, product: CreateProduct) -> Result<(), B
 
     Ok(())
 }
+
+#[derive(Deserialize, Debug)]
+pub struct Params {
+    pub id: i64
+}
+
+#[instrument(skip(state))]
+#[debug_handler]
+pub async fn replace_product(
+    State(state): State<AppState>,
+    Query(params): Query<Params>,
+    Json(product): Json<Product>,
+) -> Result<(), StatusCode> {
+    match replace_product_fn(state, params.id, product).await {
+        Ok(_) => Ok(()),
+        Err(err) => {
+            log::error!(target = "api", route = "replace_product"; "{:?}", err);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn replace_product_fn(state: AppState, id: i64, product: Product) -> Result<(), Box<dyn Error>> {
+    sqlx::query!("update product set items = ? where id = ?", &product.items, id)
+        .execute(&state.database)
+        .await?;
+    let msg = AvroProduct {
+        id: product.id,
+        items: product.items,
+    };
+    let key = bincode::serialize(&id)?;
+    let value = bincode::serialize(&msg)?;
+    let record = Record::from_key_value("products", key, value);
+    state.producer.lock().unwrap().send(&record)?;
+
+    Ok(())
+}
+
+pub async fn delete_product(State(state): State<AppState>, Query(params): Query<Params>) -> Result<(), StatusCode> {
+     let res = sqlx::query!("delete from product where id = ?", params.id)
+        .execute(&state.database)
+        .await;
+    match res {
+        Ok(_) => Ok(()),
+        Err(err) => {
+            log::error!(target = "api", route = "delete_product"; "{:?}", err);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        },
+    }
+}
+
