@@ -11,11 +11,11 @@ use serde::Deserialize;
 use tracing::instrument;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-type AxumResult<T> = std::result::Result<T, StatusCode>;
+type Response<T> = std::result::Result<T, StatusCode>;
 
 #[instrument(skip(state))]
 #[debug_handler]
-pub async fn get_products(State(state): State<AppState>) -> AxumResult<Json<Vec<Product>>> {
+pub async fn get_products(State(state): State<AppState>) -> Response<Json<Vec<Product>>> {
     match get_products_fn(state).await {
         Ok(response) => Ok(Json(response)),
         Err(err) => {
@@ -37,7 +37,7 @@ async fn get_products_fn(state: AppState) -> Result<Vec<Product>> {
 pub async fn new_product(
     State(state): State<AppState>,
     Json(product): Json<CreateProduct>,
-) -> AxumResult<()> {
+) -> Response<()> {
     match new_product_fn(state, product).await {
         Ok(_) => Ok(()),
         Err(err) => {
@@ -75,7 +75,7 @@ pub async fn replace_product(
     State(state): State<AppState>,
     Query(params): Query<Params>,
     Json(product): Json<Product>,
-) -> AxumResult<()> {
+) -> Response<()> {
     match replace_product_fn(state, params.id, product).await {
         Ok(_) => Ok(()),
         Err(err) => {
@@ -108,7 +108,7 @@ async fn replace_product_fn(state: AppState, id: i64, product: Product) -> Resul
 pub async fn delete_product(
     State(state): State<AppState>,
     Query(params): Query<Params>,
-) -> AxumResult<()> {
+) -> Response<()> {
     let res = sqlx::query!("delete from product where id = ?", params.id)
         .execute(&state.database)
         .await;
