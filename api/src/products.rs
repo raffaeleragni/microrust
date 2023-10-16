@@ -42,13 +42,7 @@ pub async fn new_product(
     State(state): State<AppState>,
     Json(product): Json<CreateProduct>,
 ) -> Response<()> {
-    match new_product_fn(state, product).await {
-        Ok(_) => Ok(()),
-        Err(err) => {
-            log::error!(target = "api", route = "new_product"; "{:?}", err);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
+    response_from_result(new_product_fn(state, product).await)
 }
 
 async fn new_product_fn(state: AppState, product: CreateProduct) -> Result<()> {
@@ -80,13 +74,7 @@ pub async fn replace_product(
     Query(params): Query<Params>,
     Json(product): Json<Product>,
 ) -> Response<()> {
-    match replace_product_fn(state, params.id, product).await {
-        Ok(_) => Ok(()),
-        Err(err) => {
-            log::error!(target = "api", route = "replace_product"; "{:?}", err);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
+    response_from_result(replace_product_fn(state, params.id, product).await)
 }
 
 async fn replace_product_fn(state: AppState, id: i64, product: Product) -> Result<()> {
@@ -113,14 +101,8 @@ pub async fn delete_product(
     State(state): State<AppState>,
     Query(params): Query<Params>,
 ) -> Response<()> {
-    let res = sqlx::query!("delete from product where id = ?", params.id)
+    let _ = sqlx::query!("delete from product where id = ?", params.id)
         .execute(&state.database)
         .await;
-    match res {
-        Ok(_) => Ok(()),
-        Err(err) => {
-            log::error!(target = "api", route = "delete_product"; "{:?}", err);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
+    response_from_result(Ok(()))
 }
