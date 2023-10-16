@@ -1,16 +1,21 @@
-use std::error::Error;
-
-use axum::{extract::{State, Query}, http::StatusCode, Json};
+use crate::AppState;
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
 use axum_macros::debug_handler;
 use contracts::prelude::*;
 use kafka::producer::Record;
-use tracing::instrument;
-use crate::AppState;
 use serde::Deserialize;
+use tracing::instrument;
+
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+type AxumResult<T> = std::result::Result<T, StatusCode>;
 
 #[instrument(skip(state))]
 #[debug_handler]
-pub async fn get_products(State(state): State<AppState>) -> Result<Json<Vec<Product>>, StatusCode> {
+pub async fn get_products(State(state): State<AppState>) -> AxumResult<Json<Vec<Product>>> {
     match get_products_fn(state).await {
         Ok(response) => Ok(Json(response)),
         Err(err) => {
@@ -20,7 +25,7 @@ pub async fn get_products(State(state): State<AppState>) -> Result<Json<Vec<Prod
     }
 }
 
-async fn get_products_fn(state: AppState) -> Result<Vec<Product>, Box<dyn Error>> {
+async fn get_products_fn(state: AppState) -> Result<Vec<Product>> {
     let res = sqlx::query_as!(Product, "select * from product")
         .fetch_all(&state.database)
         .await?;
@@ -32,7 +37,7 @@ async fn get_products_fn(state: AppState) -> Result<Vec<Product>, Box<dyn Error>
 pub async fn new_product(
     State(state): State<AppState>,
     Json(product): Json<CreateProduct>,
-) -> Result<(), StatusCode> {
+) -> AxumResult<()> {
     match new_product_fn(state, product).await {
         Ok(_) => Ok(()),
         Err(err) => {
@@ -42,7 +47,7 @@ pub async fn new_product(
     }
 }
 
-async fn new_product_fn(state: AppState, product: CreateProduct) -> Result<(), Box<dyn Error>> {
+async fn new_product_fn(state: AppState, product: CreateProduct) -> Result<()> {
     let id = sqlx::query!("insert into product (items) values (?)", &product.items)
         .execute(&state.database)
         .await?
@@ -61,7 +66,7 @@ async fn new_product_fn(state: AppState, product: CreateProduct) -> Result<(), B
 
 #[derive(Deserialize, Debug)]
 pub struct Params {
-    pub id: i64
+    pub id: i64,
 }
 
 #[instrument(skip(state))]
@@ -70,7 +75,7 @@ pub async fn replace_product(
     State(state): State<AppState>,
     Query(params): Query<Params>,
     Json(product): Json<Product>,
-) -> Result<(), StatusCode> {
+) -> AxumResult<()> {
     match replace_product_fn(state, params.id, product).await {
         Ok(_) => Ok(()),
         Err(err) => {
@@ -80,10 +85,14 @@ pub async fn replace_product(
     }
 }
 
-async fn replace_product_fn(state: AppState, id: i64, product: Product) -> Result<(), Box<dyn Error>> {
-    sqlx::query!("update product set items = ? where id = ?", &product.items, id)
-        .execute(&state.database)
-        .await?;
+async fn replace_product_fn(state: AppState, id: i64, product: Product) -> Result<()> {
+    sqlx::query!(
+        "update product set items = ? where id = ?",
+        &product.items,
+        id
+    )
+    .execute(&state.database)
+    .await?;
     let msg = AvroProduct {
         id: product.id,
         items: product.items,
@@ -96,8 +105,11 @@ async fn replace_product_fn(state: AppState, id: i64, product: Product) -> Resul
     Ok(())
 }
 
-pub async fn delete_product(State(state): State<AppState>, Query(params): Query<Params>) -> Result<(), StatusCode> {
-     let res = sqlx::query!("delete from product where id = ?", params.id)
+pub async fn delete_product(
+    State(state): State<AppState>,
+    Query(params): Query<Params>,
+) -> AxumResult<()> {
+    let res = sqlx::query!("delete from product where id = ?", params.id)
         .execute(&state.database)
         .await;
     match res {
@@ -105,7 +117,6 @@ pub async fn delete_product(State(state): State<AppState>, Query(params): Query<
         Err(err) => {
             log::error!(target = "api", route = "delete_product"; "{:?}", err);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
-        },
+        }
     }
 }
-
