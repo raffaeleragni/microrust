@@ -13,6 +13,48 @@ use tracing::instrument;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 type Response<T> = std::result::Result<T, StatusCode>;
 
+#[derive(Deserialize, Debug)]
+pub struct Params {
+    pub id: i64,
+}
+
+#[instrument(skip(state))]
+#[debug_handler]
+pub async fn get_products(State(state): State<AppState>) -> Response<Json<Vec<Product>>> {
+    response_from_result(get_products_fn(state).await.map(|it| Json(it)))
+}
+
+#[instrument(skip(state))]
+#[debug_handler]
+pub async fn new_product(
+    State(state): State<AppState>,
+    Json(product): Json<CreateProduct>,
+) -> Response<()> {
+    response_from_result(new_product_fn(state, product).await)
+}
+
+#[instrument(skip(state))]
+#[debug_handler]
+pub async fn replace_product(
+    State(state): State<AppState>,
+    Query(params): Query<Params>,
+    Json(product): Json<Product>,
+) -> Response<()> {
+    response_from_result(replace_product_fn(state, params.id, product).await)
+}
+
+#[instrument(skip(state))]
+#[debug_handler]
+pub async fn delete_product(
+    State(state): State<AppState>,
+    Query(params): Query<Params>,
+) -> Response<()> {
+    let _ = sqlx::query!("delete from product where id = ?", params.id)
+        .execute(&state.database)
+        .await;
+    response_from_result(Ok(()))
+}
+
 fn response_from_result<T>(result: Result<T>) -> Response<T> {
     match result {
         Ok(response) => Ok(response),
@@ -23,26 +65,11 @@ fn response_from_result<T>(result: Result<T>) -> Response<T> {
     }
 }
 
-#[instrument(skip(state))]
-#[debug_handler]
-pub async fn get_products(State(state): State<AppState>) -> Response<Json<Vec<Product>>> {
-    response_from_result(get_products_fn(state).await.map(|it| Json(it)))
-}
-
 async fn get_products_fn(state: AppState) -> Result<Vec<Product>> {
     let res = sqlx::query_as!(Product, "select * from product")
         .fetch_all(&state.database)
         .await?;
     Ok(res)
-}
-
-#[instrument(skip(state))]
-#[debug_handler]
-pub async fn new_product(
-    State(state): State<AppState>,
-    Json(product): Json<CreateProduct>,
-) -> Response<()> {
-    response_from_result(new_product_fn(state, product).await)
 }
 
 async fn new_product_fn(state: AppState, product: CreateProduct) -> Result<()> {
@@ -60,21 +87,6 @@ async fn new_product_fn(state: AppState, product: CreateProduct) -> Result<()> {
     state.producer.lock().unwrap().send(&record)?;
 
     Ok(())
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Params {
-    pub id: i64,
-}
-
-#[instrument(skip(state))]
-#[debug_handler]
-pub async fn replace_product(
-    State(state): State<AppState>,
-    Query(params): Query<Params>,
-    Json(product): Json<Product>,
-) -> Response<()> {
-    response_from_result(replace_product_fn(state, params.id, product).await)
 }
 
 async fn replace_product_fn(state: AppState, id: i64, product: Product) -> Result<()> {
@@ -97,12 +109,3 @@ async fn replace_product_fn(state: AppState, id: i64, product: Product) -> Resul
     Ok(())
 }
 
-pub async fn delete_product(
-    State(state): State<AppState>,
-    Query(params): Query<Params>,
-) -> Response<()> {
-    let _ = sqlx::query!("delete from product where id = ?", params.id)
-        .execute(&state.database)
-        .await;
-    response_from_result(Ok(()))
-}
