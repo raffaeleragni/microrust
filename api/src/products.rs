@@ -13,16 +13,20 @@ use tracing::instrument;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 type Response<T> = std::result::Result<T, StatusCode>;
 
+fn response_from_result<T>(result: Result<T>) -> Response<T> {
+    match result {
+        Ok(response) => Ok(response),
+        Err(err) => {
+            log::error!(target = "api"; "{:?}", err);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        },
+    }
+}
+
 #[instrument(skip(state))]
 #[debug_handler]
 pub async fn get_products(State(state): State<AppState>) -> Response<Json<Vec<Product>>> {
-    match get_products_fn(state).await {
-        Ok(response) => Ok(Json(response)),
-        Err(err) => {
-            log::error!(target = "api", route = "get_products"; "{:?}", err);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
+    response_from_result(get_products_fn(state).await.map(|it| Json(it)))
 }
 
 async fn get_products_fn(state: AppState) -> Result<Vec<Product>> {
