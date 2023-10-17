@@ -8,6 +8,7 @@ services:
       - MYSQL_DATABASE=api
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 1s
       timeout: 1s
       retries: 60
   zookeeper:
