@@ -1,7 +1,7 @@
 use anyhow::Result;
-
 use askama::Template;
-use axum::{extract::State, routing::get, Router};
+use axum::{extract::State, http::header, response::IntoResponse, routing::get, Router};
+use rust_embed::RustEmbed;
 use surrealdb::{
     engine::remote::ws::{Client, Ws},
     Surreal,
@@ -10,6 +10,24 @@ use surrealdb::{
 #[derive(Clone)]
 struct AppState {
     db: Surreal<Client>,
+}
+
+#[derive(RustEmbed)]
+#[folder = "static"]
+struct Asset;
+async fn static_htmx_min_js() -> impl IntoResponse {
+    (
+        [(header::CONTENT_TYPE, "text/javascript")],
+        Asset::get("htmx.min.js").unwrap().data.to_vec(),
+    )
+        .into_response()
+}
+async fn static_index_css() -> impl IntoResponse {
+    (
+        [(header::CONTENT_TYPE, "text/css")],
+        Asset::get("index.css").unwrap().data.to_vec(),
+    )
+        .into_response()
 }
 
 #[derive(Template)]
@@ -38,6 +56,8 @@ async fn main() -> Result<()> {
     let app = Router::new()
         .route("/", get(index))
         .route("/info", get(info))
+        .route("/htmx.min.js", get(static_htmx_min_js))
+        .route("/index.css", get(static_index_css))
         .with_state(AppState { db });
 
     axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
