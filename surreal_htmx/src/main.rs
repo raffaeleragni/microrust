@@ -1,7 +1,12 @@
+use std::env;
+
 use anyhow::Result;
 use askama::Template;
 use axum::{extract::State, http::header, response::IntoResponse, routing::get, Router};
+use axum_prometheus::PrometheusMetricLayer;
 use rust_embed::RustEmbed;
+use sentry_tower::{NewSentryLayer, SentryHttpLayer};
+use structured_logger::async_json::new_writer;
 use surrealdb::{
     engine::remote::ws::{Client, Ws},
     Surreal,
@@ -50,15 +55,38 @@ async fn info(State(state): State<AppState>) -> Info {
     Info { info }
 }
 
+fn sentry_log_setup() {
+    if let Ok(url) = env::var("SENTRY_URL") {
+        let _guard = sentry::init((
+            url,
+            sentry::ClientOptions {
+                release: sentry::release_name!(),
+                traces_sample_rate: 1.0,
+                ..Default::default()
+            },
+        ));
+    }
+
+    structured_logger::Builder::with_level("info")
+        .with_target_writer("*", new_writer(tokio::io::stdout()))
+        .init();
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    sentry_log_setup();
+    let (metric_gatherer, metric_printer) = PrometheusMetricLayer::pair();
     let db = Surreal::new::<Ws>("127.0.0.1:8000").await?;
     let app = Router::new()
+        .route("/metrics", get(|| async move { metric_printer.render() }))
         .route("/", get(index))
         .route("/info", get(info))
         .route("/htmx.min.js", get(static_htmx_min_js))
         .route("/index.css", get(static_index_css))
-        .with_state(AppState { db });
+        .with_state(AppState { db })
+        .layer(metric_gatherer)
+        .layer(SentryHttpLayer::with_transaction())
+        .layer(NewSentryLayer::new_from_top());
 
     axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
         .serve(app.into_make_service())
