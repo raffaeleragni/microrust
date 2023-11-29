@@ -21,7 +21,7 @@ pub struct Params {
 #[instrument(skip(state))]
 #[debug_handler]
 pub async fn get_products(State(state): State<AppState>) -> Response<Json<Vec<Product>>> {
-    response_from_result(get_products_fn(state).await.map(|it| Json(it)))
+    response_from_result(get_products_fn(state).await.map(Json))
 }
 
 #[instrument(skip(state))]
