@@ -8,12 +8,12 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 askama = { version = "0.12.1", features = ["with-axum"] }
-askama_axum = "0.3.0"
-axum = { version = "0.6.20", features = ["http2"] }
-axum-prometheus = "0.4.0"
+askama_axum = "0.4.0"
+axum = { version = "0.7", features = ["http2"] }
+axum-prometheus = "0.5.0"
 rust-embed = { version = "8.0.0", features = ["axum"] }
-sentry = { version = "0.31.8", features = ["tracing"] }
-sentry-tower = { version = "0.31.8", features = ["axum", "http"] }
+sentry = { version = "0.32.0", features = ["tracing"] }
+sentry-tower = { version = "0.32.0", features = ["axum", "http"] }
 serde = { version = "1.0.192", features = ["derive"] }
 structured-logger = "1.0.3"
 surrealdb = "1.0.0"

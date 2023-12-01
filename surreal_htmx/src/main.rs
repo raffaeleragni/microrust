@@ -11,6 +11,7 @@ use surrealdb::{
     engine::remote::ws::{Client, Ws},
     Surreal,
 };
+use tokio::net::TcpListener;
 
 #[derive(Clone)]
 struct AppState {
@@ -88,9 +89,7 @@ async fn main() -> Result<()> {
         .layer(SentryHttpLayer::with_transaction())
         .layer(NewSentryLayer::new_from_top());
 
-    axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
-        .serve(app.into_make_service())
-        .await?;
-
+    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await?;
     Ok(())
 }
