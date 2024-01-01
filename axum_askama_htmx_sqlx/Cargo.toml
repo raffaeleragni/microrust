@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.78"
 structured-logger = "1.0.3"
-axum = { version = "0.7.3", features = ["http2"] }
+axum = { version = "0.7.3", features = ["http2", "macros"] }
 axum-prometheus = "0.5.0"
 askama = { version = "0.12.1", features = ["with-axum"] }
 sqlx = { version = "0.7.3", features = ["postgres", "runtime-tokio"] }
@@ -16,3 +16,5 @@ tokio = { version = "1.35.1", features = ["macros", "rt-multi-thread"] }
 sentry = { version = "0.32.1", features = ["anyhow", "tower", "tracing"] }
 sentry-tower = { version = "0.32.1", features = ["axum", "http"] }
 serde = { version = "1.0.193", features = ["derive"] }
+askama_axum = "0.4.0"
+rust-embed = { version = "8.2.0", features = ["axum", "tokio"] }

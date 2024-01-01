@@ -1,3 +1,6 @@
+mod ui;
+mod api;
+
 use std::env;
 
 use anyhow::Result;
@@ -15,6 +18,8 @@ async fn main() -> Result<()> {
 
     let mut app = Router::new();
     app = prometheus(app);
+    app = ui::init(app);
+    app = api::init(app);
 
     axum::serve(listener, app).await?;
     Ok(())
