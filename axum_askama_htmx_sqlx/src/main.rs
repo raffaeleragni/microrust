@@ -6,7 +6,12 @@ use tokio::net::TcpListener;
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv::dotenv()?;
-    let listener = TcpListener::bind("0.0.0.0:3000").await?;
+
+    let port = env::var("SERVER_PORT")
+        .ok()
+        .and_then(|s| s.parse::<u32>().ok())
+        .unwrap_or(3000);
+    let listener = TcpListener::bind(format!("0.0.0.0:{port}")).await?;
 
     logger();
     sentry();
