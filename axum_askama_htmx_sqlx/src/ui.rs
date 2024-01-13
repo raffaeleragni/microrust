@@ -1,12 +1,18 @@
 use std::env;
 
+use anyhow::Result;
 use askama::Template;
 use askama_axum::IntoResponse;
-use axum::{http::header, routing::get, Router};
+use axum::{http::header, routing::get, Extension, Router};
 use rust_embed::RustEmbed;
+use sqlx::{query, Pool, Postgres};
+
+use crate::AppError;
 
 pub fn init(app: Router) -> Router {
-    app.route("/", get(index)).route("/htmx.min.js", get(htmx))
+    app.route("/", get(index))
+        .route("/htmx.min.js", get(htmx))
+        .route("/sample", get(get_sample))
 }
 
 #[derive(Template)]
@@ -30,4 +36,14 @@ async fn htmx() -> impl IntoResponse {
         Asset::get("htmx.min.js").unwrap().data.to_vec(),
     )
         .into_response()
+}
+
+#[derive(Template)]
+#[template(path = "view.html")]
+struct SampleView {}
+
+#[axum::debug_handler]
+async fn get_sample(Extension(db): Extension<Pool<Postgres>>) -> Result<SampleView, AppError> {
+    let _sample = query!("select * from sample").fetch_one(&db).await?;
+    Ok(SampleView {})
 }

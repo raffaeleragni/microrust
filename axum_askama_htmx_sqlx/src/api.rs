@@ -7,3 +7,4 @@ pub fn init(app: Router) -> Router {
 async fn not_found() -> StatusCode {
     StatusCode::NOT_FOUND
 }
+
