@@ -11,11 +11,11 @@ use sqlx::postgres::PgPoolOptions;
 
 pub async fn app() -> Result<Router> {
     let mut app = Router::new();
-    app = prometheus(app);
     app = extra(app);
     app = ui::init(app);
     app = api::init(app);
     app = database(app).await?;
+    app = prometheus(app);
     Ok(app)
 }
 
