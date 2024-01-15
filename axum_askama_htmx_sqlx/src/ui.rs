@@ -3,9 +3,10 @@ use std::env;
 use anyhow::Result;
 use askama::Template;
 use askama_axum::IntoResponse;
-use axum::{extract::Path, http::header, routing::get, Extension, Router};
+use axum::{extract::Path, http::header, routing::get, Extension, Form, Router};
 use rust_embed::RustEmbed;
-use sqlx::{query_as, Pool, Postgres};
+use serde::Deserialize;
+use sqlx::{query, query_as, Pool, Postgres};
 
 use crate::AppError;
 
@@ -13,7 +14,7 @@ pub fn init(app: Router) -> Router {
     app.route("/", get(index))
         .route("/htmx.min.js", get(htmx))
         .route("/ui/samples", get(get_samples))
-        .route("/ui/sample", get(get_sample))
+        .route("/ui/sample", get(get_sample).post(add_sample))
 }
 
 #[derive(Template)]
@@ -73,4 +74,24 @@ async fn get_sample(
         .fetch_one(&db)
         .await?;
     Ok(SampleView { sample })
+}
+
+#[derive(Deserialize)]
+struct NewSample {
+    name: String,
+}
+
+async fn add_sample(
+    Extension(db): Extension<Pool<Postgres>>,
+    Form(new): Form<NewSample>,
+) -> Result<SamplesView, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    query!(
+        "insert into sample (id, name) values ($1, $2)",
+        id,
+        new.name
+    )
+    .execute(&db)
+    .await?;
+    get_samples(Extension(db)).await
 }

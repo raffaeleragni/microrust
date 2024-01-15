@@ -8,8 +8,13 @@
 
 <body>
     Index
+    <form hx-post="/ui/sample" hx-target="#list">
+        Add new: <br>
+        name: <input name="name" type="text"/>
+        <button type="submit">GO</button>
+    </form>
 
-    <div hx-get="/ui/samples" hx-trigger="load">
+    <div id="list" hx-get="/ui/samples" hx-trigger="load">
     </div>
 </body>
 
