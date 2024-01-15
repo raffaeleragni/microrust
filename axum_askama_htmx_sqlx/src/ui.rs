@@ -7,7 +7,7 @@ use serde::Deserialize;
 use sqlx::{query, query_as, Pool, Postgres};
 use std::env;
 
-use crate::AppError;
+use crate::errors::AppError;
 
 pub fn init(app: Router) -> Router {
     statics::init(
@@ -31,6 +31,11 @@ async fn index() -> Index {
 
 struct Sample {
     id: String,
+    name: String,
+}
+
+#[derive(Deserialize)]
+struct NewSample {
     name: String,
 }
 
@@ -63,11 +68,6 @@ async fn get_sample(
         .fetch_one(&db)
         .await?;
     Ok(SampleView { sample })
-}
-
-#[derive(Deserialize)]
-struct NewSample {
-    name: String,
 }
 
 async fn add_sample(
