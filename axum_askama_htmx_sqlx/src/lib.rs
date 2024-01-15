@@ -10,20 +10,11 @@ use std::env;
 
 pub async fn app() -> Result<Router> {
     let mut app = Router::new();
-    app = extra(app);
     app = ui::init(app);
     app = api::init(app);
     app = database(app).await?;
     app = prometheus(app);
     Ok(app)
-}
-
-fn extra(app: Router) -> Router {
-    app.route("/status", get(status))
-}
-
-async fn status() -> String {
-    "".into()
 }
 
 async fn database(app: Router) -> Result<Router> {

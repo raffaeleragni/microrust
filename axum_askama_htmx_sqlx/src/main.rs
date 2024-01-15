@@ -1,4 +1,6 @@
 use anyhow::Result;
+use askama_axum::IntoResponse;
+use axum::routing::get;
 use std::env;
 use structured_logger::async_json::new_writer;
 use tokio::net::TcpListener;
@@ -17,6 +19,7 @@ async fn main() -> Result<()> {
     sentry();
 
     let app = app::app().await?;
+    let app = app.route("/status", get(|| async { "".into_response() }));
 
     log::info!("Starting server");
     axum::serve(listener, app).await?;
