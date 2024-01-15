@@ -1,20 +1,20 @@
-use std::env;
+mod statics;
 
 use anyhow::Result;
 use askama::Template;
-use askama_axum::IntoResponse;
-use axum::{extract::Path, http::header, routing::get, Extension, Form, Router};
-use rust_embed::RustEmbed;
+use axum::{extract::Path, routing::get, Extension, Form, Router};
 use serde::Deserialize;
 use sqlx::{query, query_as, Pool, Postgres};
+use std::env;
 
 use crate::AppError;
 
 pub fn init(app: Router) -> Router {
-    app.route("/", get(index))
-        .route("/htmx.min.js", get(htmx))
-        .route("/ui/samples", get(get_samples))
-        .route("/ui/sample", get(get_sample).post(add_sample))
+    statics::init(
+        app.route("/", get(index))
+            .route("/ui/samples", get(get_samples))
+            .route("/ui/sample", get(get_sample).post(add_sample)),
+    )
 }
 
 #[derive(Template)]
@@ -27,17 +27,6 @@ struct Index {
 async fn index() -> Index {
     let css = env::var("CDN_CSS_FILE").unwrap_or("styles.css".into());
     Index { cdn_css_file: css }
-}
-
-#[derive(RustEmbed)]
-#[folder = "static"]
-struct Asset;
-async fn htmx() -> impl IntoResponse {
-    (
-        [(header::CONTENT_TYPE, "text/javascript")],
-        Asset::get("htmx.min.js").unwrap().data.to_vec(),
-    )
-        .into_response()
 }
 
 struct Sample {
