@@ -1,10 +1,6 @@
-use axum::{http::StatusCode, routing::get, Router};
+mod sample;
+use axum::Router;
 
 pub fn init(app: Router) -> Router {
-    app.route("/api", get(not_found))
+    sample::init(app)
 }
-
-async fn not_found() -> StatusCode {
-    StatusCode::NOT_FOUND
-}
-
