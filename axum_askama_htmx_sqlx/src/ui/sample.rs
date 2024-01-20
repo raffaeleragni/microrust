@@ -33,7 +33,6 @@ struct SampleView {
     sample: Sample,
 }
 
-#[axum::debug_handler]
 async fn get_samples(Extension(db): Extension<Pool<Postgres>>) -> Result<SamplesView, AppError> {
     let samples = query_as!(Sample, "select * from sample")
         .fetch_all(&db)
@@ -41,7 +40,6 @@ async fn get_samples(Extension(db): Extension<Pool<Postgres>>) -> Result<Samples
     Ok(SamplesView { samples })
 }
 
-#[axum::debug_handler]
 async fn get_sample(
     Extension(db): Extension<Pool<Postgres>>,
     Path(id): Path<String>,

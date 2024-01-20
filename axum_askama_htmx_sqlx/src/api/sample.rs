@@ -24,7 +24,6 @@ struct NewSample {
     name: String,
 }
 
-#[axum::debug_handler]
 async fn get_samples(
     Extension(db): Extension<Pool<Postgres>>,
 ) -> Result<Json<Vec<Sample>>, AppError> {
@@ -34,7 +33,6 @@ async fn get_samples(
     Ok(Json(samples))
 }
 
-#[axum::debug_handler]
 async fn get_sample(
     Extension(db): Extension<Pool<Postgres>>,
     Path(id): Path<String>,
@@ -45,7 +43,6 @@ async fn get_sample(
     Ok(Json(sample))
 }
 
-#[axum::debug_handler]
 async fn new_sample(
     Extension(db): Extension<Pool<Postgres>>,
     Json(sample): Json<NewSample>,
