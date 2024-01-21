@@ -7,7 +7,7 @@ use tokio::net::TcpListener;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenv::dotenv()?;
+    dotenvy::dotenv()?;
 
     let port = env::var("SERVER_PORT")
         .ok()
