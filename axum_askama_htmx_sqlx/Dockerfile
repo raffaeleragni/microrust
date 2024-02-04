@@ -1,13 +1,19 @@
-FROM rust
-RUN mkdir -p /app
+FROM lukemathwalker/cargo-chef:latest-rust-1.75.0 AS chef
 WORKDIR /app
-COPY ./Cargo.toml ./Cargo.toml
-COPY ./src ./src
-COPY ./templates ./templates
-COPY ./static ./static
-COPY ./migrations ./migrations
-COPY ./.sqlx ./.sqlx
+
+FROM chef AS reciper
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef as builder
+COPY --from=reciper /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+COPY . .
 ENV SQLX_OFFLINE true
 RUN cargo build --release
-ENTRYPOINT ["/app/target/release/app"]
+
+FROM rust:1.75-slim as runtime
+COPY --from=builder /app/target/release/app /usr/local/bin
+ENTRYPOINT ["/usr/local/app"]
 
