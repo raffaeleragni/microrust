@@ -4,6 +4,7 @@ use axum::routing::get;
 use std::env;
 use structured_logger::async_json::new_writer;
 use tokio::net::TcpListener;
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -21,7 +22,7 @@ async fn main() -> Result<()> {
     let app = app::app().await?;
     let app = app.route("/status", get(|| async { "".into_response() }));
 
-    log::info!("Starting server");
+    info!("Starting server");
     axum::serve(listener, app).await?;
     Ok(())
 }
@@ -40,7 +41,14 @@ fn sentry() {
 }
 
 fn logger() {
-    structured_logger::Builder::with_level("info")
-        .with_target_writer("*", new_writer(tokio::io::stdout()))
-        .init();
+    let enabled: bool = env::var("STRUCTURED_LOGGING")
+        .map(|s| s.parse::<bool>().unwrap_or(false))
+        .unwrap_or(false);
+    if enabled {
+        structured_logger::Builder::with_level("info")
+            .with_target_writer("*", new_writer(tokio::io::stdout()))
+            .init();
+    } else {
+        tracing_subscriber::fmt::init();
+    }
 }
