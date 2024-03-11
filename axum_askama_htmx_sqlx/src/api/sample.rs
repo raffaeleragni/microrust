@@ -4,6 +4,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{query, query_as, Pool, Postgres};
+use tracing::{instrument, info};
 use uuid::Uuid;
 
 use crate::errors::AppError;
@@ -19,7 +20,7 @@ struct Sample {
     name: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct NewSample {
     name: String,
 }
@@ -43,6 +44,7 @@ async fn get_sample(
     Ok(Json(sample))
 }
 
+#[instrument]
 async fn new_sample(
     Extension(db): Extension<Pool<Postgres>>,
     Json(sample): Json<NewSample>,
@@ -55,5 +57,6 @@ async fn new_sample(
     )
     .execute(&db)
     .await?;
+    info!("sample created");
     get_sample(Extension(db), Path(id)).await
 }

@@ -3,6 +3,7 @@ use askama::Template;
 use axum::{extract::Path, Extension, Form, Router, routing::get};
 use serde::Deserialize;
 use sqlx::{query, query_as, Pool, Postgres};
+use tracing::{instrument, info};
 
 use crate::errors::AppError;
 
@@ -16,7 +17,7 @@ struct Sample {
     name: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct NewSample {
     name: String,
 }
@@ -50,6 +51,7 @@ async fn get_sample(
     Ok(SampleView { sample })
 }
 
+#[instrument(skip(db))]
 async fn add_sample(
     Extension(db): Extension<Pool<Postgres>>,
     Form(new): Form<NewSample>,
@@ -62,5 +64,6 @@ async fn add_sample(
     )
     .execute(&db)
     .await?;
+    info!("span created");
     get_samples(Extension(db)).await
 }

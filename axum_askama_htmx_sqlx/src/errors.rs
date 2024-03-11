@@ -1,7 +1,6 @@
 use askama_axum::IntoResponse;
 use axum::http::StatusCode;
 
-
 pub struct AppError(anyhow::Error);
 
 impl From<sqlx::Error> for AppError {
