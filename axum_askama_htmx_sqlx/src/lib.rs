@@ -3,8 +3,7 @@ mod errors;
 mod ui;
 
 use anyhow::Result;
-use axum::{routing::get, Extension, Router};
-use axum_prometheus::PrometheusMetricLayer;
+use axum::{Extension, Router};
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 
@@ -13,7 +12,6 @@ pub async fn app() -> Result<Router> {
     app = ui::init(app);
     app = api::init(app);
     app = database(app).await?;
-    app = prometheus(app);
     Ok(app)
 }
 
@@ -29,13 +27,4 @@ async fn database(app: Router) -> Result<Router> {
         .await?;
     sqlx::migrate!().run(&pool).await?;
     Ok(app.layer(Extension(pool)))
-}
-
-fn prometheus(app: Router) -> Router {
-    let (metric_gatherer, metric_printer) = PrometheusMetricLayer::pair();
-    app.route(
-        "/metrics/prometheus",
-        get(|| async move { metric_printer.render() }),
-    )
-    .layer(metric_gatherer)
 }

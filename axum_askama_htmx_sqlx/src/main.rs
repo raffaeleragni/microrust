@@ -1,6 +1,7 @@
 use anyhow::Result;
 use askama_axum::IntoResponse;
-use axum::routing::get;
+use axum::{routing::get, Router};
+use axum_prometheus::PrometheusMetricLayer;
 use std::env;
 use structured_logger::async_json::new_writer;
 use tokio::net::TcpListener;
@@ -20,6 +21,7 @@ async fn main() -> Result<()> {
     sentry();
 
     let app = app::app().await?;
+    let app = prometheus(app);
     let app = app.route("/status", get(|| async { "".into_response() }));
 
     info!("Starting server");
@@ -51,4 +53,13 @@ fn logger() {
     } else {
         tracing_subscriber::fmt::init();
     }
+}
+
+fn prometheus(app: Router) -> Router {
+    let (metric_gatherer, metric_printer) = PrometheusMetricLayer::pair();
+    app.route(
+        "/metrics/prometheus",
+        get(|| async move { metric_printer.render() }),
+    )
+    .layer(metric_gatherer)
 }
