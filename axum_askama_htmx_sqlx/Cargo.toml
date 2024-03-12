@@ -21,7 +21,7 @@ sentry-tower = { version = "0.32.1", features = ["axum", "http"] }
 rust-embed = { version = "8.2.0", features = ["axum", "tokio"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 serde = { version = "1", features = ["derive"] }
-dotenvy = "0.15.0"
 uuid = { version = "1.6.1", features = ["v4", "fast-rng", "macro-diagnostics"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["serde"] }
+dotenv = { version = "0.15.0" }

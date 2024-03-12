@@ -6,10 +6,11 @@ use std::env;
 use structured_logger::async_json::new_writer;
 use tokio::net::TcpListener;
 use tracing::info;
+use dotenv::dotenv;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenvy::dotenv()?;
+    dotenv().ok();
 
     let port = env::var("SERVER_PORT")
         .ok()
