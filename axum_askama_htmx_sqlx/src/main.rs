@@ -12,14 +12,15 @@ use dotenv::dotenv;
 async fn main() -> Result<()> {
     dotenv().ok();
 
+    let bind = env::var("SERVER_BIND").unwrap_or("0.0.0.0".into());
     let port = env::var("SERVER_PORT")
         .ok()
         .and_then(|s| s.parse::<u32>().ok())
         .unwrap_or(3000);
-    let listener = TcpListener::bind(format!("0.0.0.0:{port}")).await?;
+    let listener = TcpListener::bind(format!("{bind}:{port}")).await?;
 
     logger();
-    sentry();
+    let _guard = sentry();
 
     let app = app::app().await?;
     let app = prometheus(app);
@@ -30,17 +31,18 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn sentry() {
+fn sentry() -> Option<sentry::ClientInitGuard> {
     if let Ok(url) = env::var("SENTRY_URL") {
-        let _guard = sentry::init((
+        return Some(sentry::init((
             url,
             sentry::ClientOptions {
                 release: sentry::release_name!(),
                 traces_sample_rate: 1.0,
                 ..Default::default()
             },
-        ));
+        )));
     }
+    None
 }
 
 fn logger() {
